@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>零基础学 Python · 给普通人的课</title>
+<meta name="description" content="一个普通上班族下班后从零学 Python 的真实笔记。不讲术语，只讲人话。">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1419; --card: #1a212b; --border: #2a3543;
+    --text: #e6edf3; --muted: #8b98a5; --accent: #ff7a45;
+    --code-bg: #0d1117; --ok: #3fb950; --warn: #d29922;
+  }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.8;
+    display: flex; min-height: 100vh;
+  }
+  nav {
+    width: 250px; background: var(--card); border-right: 1px solid var(--border);
+    padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0;
+  }
+  nav h1 { font-size: 16px; padding: 0 20px 16px; color: var(--accent); border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  nav .tag { display:block; font-size: 12px; color: var(--muted); padding: 0 20px 14px; line-height:1.5; }
+  nav a {
+    display: block; padding: 10px 20px; color: var(--muted); text-decoration: none;
+    font-size: 14px; border-left: 3px solid transparent; cursor: pointer;
+  }
+  nav a:hover { color: var(--text); background: rgba(255,255,255,.04); }
+  nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(255,122,69,.08); }
+  main { flex: 1; padding: 32px 28px 80px; max-width: 820px; }
+  .lesson { display: none; }
+  .lesson.active { display: block; }
+  .lesson h2 { font-size: 24px; margin-bottom: 6px; }
+  .lesson .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  h3 { font-size: 17px; margin: 26px 0 10px; color: var(--accent); }
+  p { margin: 10px 0; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; margin: 12px 0; font-size: 14px;
+    font-family: "SF Mono", Consolas, monospace; line-height: 1.6;
+  }
+  code { font-family: "SF Mono", Consolas, monospace; }
+  p code, li code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #ffa657; }
+  .box { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin: 14px 0; }
+  .box.ok { border-left: 3px solid var(--ok); }
+  .box.warn { border-left: 3px solid var(--warn); }
+  .box .lbl { font-weight: 600; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  th { background: var(--code-bg); color: var(--muted); }
+  .trans { color: #7ee787; }
+  ul, ol { margin: 10px 0 10px 24px; }
+  li { margin: 5px 0; }
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); margin-top: 40px; padding-top: 16px; }
+  @media (max-width: 700px) {
+    body { flex-direction: column; }
+    nav { width: 100%; height: auto; position: static; display: flex; overflow-x: auto; padding: 10px; }
+    nav h1, nav .tag { display: none; }
+    nav a { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; }
+    nav a.active { border-bottom-color: var(--accent); }
+    main { padding: 20px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <h1>🐍 零基础学 Python</h1>
+  <span class="tag">给普通人的课 · 一个人下班后从零学起</span>
+  <a class="active" data-t="l0">开始之前</a>
+  <a data-t="l1">第 1 课 · 让程序说话</a>
+  <a data-t="l2">第 2 课 · 让程序干活</a>
+  <a data-t="l3">第 3 课 · 读写文件</a>
+  <a data-t="l4">第 4 课 · 第一个工具</a>
+  <a data-t="ref">代码小词典</a>
+</nav>
+
+<main>
+
+<section class="lesson active" id="l0">
+  <h2>开始之前</h2>
+  <p class="sub">这门课是怎么来的、怎么用</p>
+
+  <div class="box">
+    <div class="lbl">写在前面</div>
+    这不是"大神教学"，是一个<b>普通上班族，下班之后从零学 Python</b> 的真实笔记。<br>
+    不讲术语堆砌，只讲人话。你遇到的卡壳，这里大概率也卡过。
+  </div>
+
+  <h3>1. 准备环境（一次就好）</h3>
+  <p>你需要一个能跑 Python 的地方。任意一种都行：</p>
+  <ul>
+    <li><b>电脑</b>：装 Python（官网 python.org 下载，勾选 "Add to PATH"）</li>
+    <li><b>手机/平板</b>：用带 Linux 环境的 App（如 Termux、或系统自带的 Linux 环境）</li>
+  </ul>
+  <div class="box warn">
+    <div class="lbl">验证装好了</div>
+    打开终端/命令行，输入 <code>python3 --version</code>，出现版本号就成功了。
+  </div>
+
+  <h3>2. 两个命令，轮着用</h3>
+  <table>
+    <tr><th>命令</th><th>干嘛</th></tr>
+    <tr><td><code>nano 文件名.py</code></td><td><b>改</b>代码</td></tr>
+    <tr><td><code>python3 文件名.py</code></td><td><b>跑</b>代码</td></tr>
+  </table>
+  <div class="box">
+    <div class="lbl">nano 怎么保存退出</div>
+    <code>Ctrl + O</code> → 回车（保存）；<code>Ctrl + X</code>（退出）
+  </div>
+
+  <h3>3. 学这门课的姿势</h3>
+  <ul>
+    <li><b>别背</b>——看懂就行，忘了回来查</li>
+    <li><b>动手</b>——每课的代码，自己改一个地方、跑一遍</li>
+    <li><b>卡住就问</b>——不丢人，所有人都卡在这几个地方</li>
+  </ul>
+</section>
+
+<section class="lesson" id="l1">
+  <h2>第 1 课 · 让程序说话</h2>
+  <p class="sub">print / 变量 / 运算 / 列表 / 循环</p>
+
+  <h3>1. 打印（最基础）</h3>
+  <pre>print("你好，Python！")</pre>
+  <p><span class="trans">人话：</span><b>打印</b>出括号里引号包着的内容。看代码时，把 <code>print</code> 读成"打印"就行。</p>
+
+  <h3>2. 变量（给东西起名字）</h3>
+  <pre>name = "朋友"
+money = 100</pre>
+  <p><span class="trans">人话：</span>把 <code>"朋友"</code> 装进叫 <code>name</code> 的盒子；把 <code>100</code> 装进 <code>money</code>。</p>
+  <div class="box warn">
+    <div class="lbl">关键</div>
+    <code>=</code> 不是"相等"，是「<b>把右边装进左边</b>」。很多人卡在这。
+  </div>
+
+  <h3>3. 拼接（用 + 串起来）</h3>
+  <pre>print("你好，" + name + "！")   # → 你好，朋友！</pre>
+
+  <h3>4. 运算（程序帮你算）</h3>
+  <pre>money = money + 50    # money 从 100 变成 150</pre>
+  <p><span class="trans">人话：</span>先算右边（100+50=150），再存回 <code>money</code>。<b>自己是自己加点东西，是"更新"。</b></p>
+
+  <h3>5. 列表（一排东西）</h3>
+  <pre>skills = ["写小说", "学Python", "做副业"]</pre>
+  <p><span class="trans">人话：</span><code>[ ]</code> 就是一排；每个东西用引号包住、逗号隔开。</p>
+
+  <h3>6. 循环（对每个做一遍）★ 最重要的一个</h3>
+  <pre>for s in skills:
+    print("  -", s)</pre>
+  <p><span class="trans">人话：</span><b>把 skills 里的东西一个一个拿出来，每拿一个就叫它 s，然后做下面缩进的事。</b></p>
+  <div class="box">
+    <div class="lbl">手动跑一遍（这样看就懂了）</div>
+    第1轮 s="写小说" → 打印「- 写小说」<br>
+    第2轮 s="学Python" → 打印「- 学Python」<br>
+    第3轮 s="做副业" → 打印「- 做副业」<br>
+    第4轮 没了 → 循环结束
+  </div>
+  <div class="box ok">
+    <div class="lbl">小测（看看你真懂没）</div>
+    <pre>numbers = [10, 20, 30]
+for n in numbers:
+    print(n * 2)</pre>
+    会打印什么？<br>
+    <b>答案：20、40、60</b>（每轮把当前那个数 ×2）
+  </div>
+  <div class="box">
+    <div class="lbl">为什么用循环</div>
+    比"一行行写 print"强——<b>不管那排有 3 个还是 300 个，都是这两行搞定。</b>
+  </div>
+</section>
+
+<section class="lesson" id="l2">
+  <h2>第 2 课 · 让程序干活</h2>
+  <p class="sub">判断 / 函数 / 统计</p>
+
+  <h3>1. 判断（如果…就…否则…）</h3>
+  <pre>if money > 5000:
+    print("有钱")
+elif money > 1000:
+    print("还行")
+else:
+    print("紧巴")</pre>
+  <p><span class="trans">人话：</span>从上往下判断，<b>第一个成立</b>的就走它下面那句，其余跳过。</p>
+  <div class="box warn">
+    <div class="lbl">别搞混</div>
+    <code>if</code> = 如果；<code>elif</code> = 否则如果（再判一次）；<code>else</code> = 否则（都不成立）。
+  </div>
+
+  <h3>2. 函数（把一段活打包）</h3>
+  <pre>def 算工资(时薪, 小时数):
+    总收入 = 时薪 * 小时数
+    return 总收入
+
+结果 = 算工资(50, 8)   # → 400</pre>
+  <p><span class="trans">人话：</span><code>def</code> = 定义（打个包、起个名）；<code>return</code> = 把结果交出来。以后随时喊 <code>算工资(50,8)</code>，它就重跑一遍。</p>
+
+  <h3>3. 统计（循环 + 判断 + 计数器）</h3>
+  <pre>学python天数 = 0
+for 任务 in 本周计划:
+    if "Python" in 任务:
+        学python天数 = 学python天数 + 1</pre>
+  <p><span class="trans">人话：</span>先准备一个计数器（0）；挨个看任务，<b>含"Python"就 +1</b>。</p>
+</section>
+
+<section class="lesson" id="l3">
+  <h2>第 3 课 · 读写文件</h2>
+  <p class="sub">字符串操作 / 写文件 / 读文件 / 数汉字</p>
+
+  <h3>1. 字符串操作（文字也能操作）</h3>
+  <pre>句子 = "长生从收录万法开始"
+len(句子)          # 9  —— 数长度
+句子[0:3]          # 长生从 —— 取前三个
+句子[-3:]          # 法开始 —— 取后三个
+句子.split("从")   # ['长生', '收录万法开始'] —— 切开
+句子.replace("万法", "斩妖")   # 替换某些字</pre>
+  <div class="box">
+    <div class="lbl">`[0:3]` 是啥</div>
+    从第 0 个开始取，取到第 3 个（<b>不含</b>）。所以取到的是前 3 个字。
+  </div>
+
+  <h3>2. 写文件</h3>
+  <pre>with open("notes/xxx.txt", "w", encoding="utf-8") as f:
+    f.write("要写的内容")</pre>
+  <p><span class="trans">人话：</span>打开文件用"写"模式（<code>"w"</code>），把内容写进去，用完自动关。<code>encoding="utf-8"</code> 是保证中文不乱码。</p>
+
+  <h3>3. 读文件</h3>
+  <pre>with open("notes/xxx.txt", "r", encoding="utf-8") as f:
+    内容 = f.read()</pre>
+  <p><span class="trans">人话：</span><code>"r"</code> = 读模式；<code>f.read()</code> 把全部内容读出来，装进"内容"。</p>
+
+  <h3>4. 数汉字（实用！）</h3>
+  <pre>汉字数 = 0
+for 字符 in 内容:
+    if "\u4e00" <= 字符 <= "\u9fff":
+        汉字数 = 汉字数 + 1</pre>
+  <div class="box">
+    <div class="lbl">`len()` 和 这段 的区别</div>
+    <code>len(内容)</code> = 数<b>所有字符</b>（汉字+标点）<br>
+    这段循环 = 只数<b>汉字</b>（写小说统计字数要的是这个）
+  </div>
+  <div class="box ok">
+    <div class="lbl">`\u4e00` 是什么</div>
+    汉字的编码范围。<code>"\u4e00" <= 字符 <= "\u9fff"</code> 就是"<b>这个字是不是汉字</b>"。
+  </div>
+</section>
+
+<section class="lesson" id="l4">
+  <h2>第 4 课 · 你的第一个工具</h2>
+  <p class="sub">把学过的零件，拼成一个"字数统计器"</p>
+
+  <h3>完整代码</h3>
+  <pre># -*- coding: utf-8 -*-
+print("=== 字数统计工具 ===")
+
+文件名 = input("请输入文件名：")
+
+with open("notes/" + 文件名, "r", encoding="utf-8") as f:
+    内容 = f.read()
+
+汉字数 = 0
+for 字符 in 内容:
+    if "\u4e00" <= 字符 <= "\u9fff":
+        汉字数 = 汉字数 + 1
+
+总字符数 = len(内容)
+
+print("文件：", 文件名)
+print("总字符数（含标点）：", 总字符数)
+print("汉字数（纯字数）：", 汉字数)
+
+if 汉字数 >= 3000:
+    print("达标")
+else:
+    print("还差", 3000 - 汉字数, "字")</pre>
+
+  <h3>新东西：input</h3>
+  <pre>文件名 = input("请输入文件名：")</pre>
+  <p><span class="trans">人话：</span><code>input</code> = 程序停下来，显示问题，等你打字按回车，把你打的字装进盒子。</p>
+  <div class="box ok">
+    <div class="lbl">跑出来的样子</div>
+    总字符数（含标点）：4252<br>
+    汉字数（纯字数）：3472<br>
+    达标
+  </div>
+
+  <h3>重点：这段"没有新东西"</h3>
+  <p>它只是把学过的零件拼起来：<code>print</code> + <code>input</code> + <code>for</code> + <code>if</code> + <code>len</code>。<br>
+  <b>编程就是这么回事——零件拼起来，就成了工具。</b></p>
+</section>
+
+<section class="lesson" id="ref">
+  <h2>代码小词典</h2>
+  <p class="sub">看不懂的词，来这查</p>
+  <table>
+    <tr><th>代码</th><th>读法</th><th>意思</th></tr>
+    <tr><td><code>print</code></td><td>普林特</td><td>打印（显示）</td></tr>
+    <tr><td><code>=</code></td><td>—</td><td>把右边装进左边</td></tr>
+    <tr><td><code>+ - * /</code></td><td>—</td><td>加 减 乘 除</td></tr>
+    <tr><td><code>if</code></td><td>伊夫</td><td>如果</td></tr>
+    <tr><td><code>elif</code></td><td>埃利夫</td><td>否则如果（再判断一次）</td></tr>
+    <tr><td><code>else</code></td><td>埃尔斯</td><td>否则</td></tr>
+    <tr><td><code>for</code></td><td>佛</td><td>对每一个</td></tr>
+    <tr><td><code>in</code></td><td>因</td><td>在…里面</td></tr>
+    <tr><td><code>len</code></td><td>楞</td><td>长度（数几个）</td></tr>
+    <tr><td><code>open</code></td><td>欧盆</td><td>打开文件</td></tr>
+    <tr><td><code>def</code></td><td>得夫</td><td>定义（打个包）</td></tr>
+    <tr><td><code>return</code></td><td>瑞特恩</td><td>交出结果</td></tr>
+    <tr><td><code>input</code></td><td>因普特</td><td>问用户，等他输入</td></tr>
+    <tr><td><code>read</code></td><td>瑞德</td><td>读出来</td></tr>
+    <tr><td><code>write</code></td><td>瑞特</td><td>写进去</td></tr>
+    <tr><td><code>[ ]</code></td><td>—</td><td>一排东西（列表）</td></tr>
+    <tr><td><code>" "</code></td><td>—</td><td>文字（要用英文引号）</td></tr>
+    <tr><td><code>:</code></td><td>—</td><td>下面缩进的是"要做的事"</td></tr>
+    <tr><td><code>#</code></td><td>—</td><td>注释（给人看的，程序跳过）</td></tr>
+  </table>
+</section>
+
+<footer>
+  这是一份正在生长的学习笔记 —— 学到哪，写到哪。
+</footer>
+
+</main>
+
+<script>
+  const links = document.querySelectorAll('nav a');
+  const lessons = document.querySelectorAll('.lesson');
+  links.forEach(a => a.addEventListener('click', () => {
+    links.forEach(x => x.classList.remove('active'));
+    lessons.forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+    document.getElementById(a.dataset.t).classList.add('active');
+    window.scrollTo(0, 0);
+  }));
+</script>
+</body>
+</html>
