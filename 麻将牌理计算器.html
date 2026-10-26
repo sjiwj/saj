@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>麻将牌理计算器 · 断门/报风自定义规则</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='5' width='80' height='90' rx='10' fill='%23f7ecd0'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%23c0392b' font-weight='bold'>万</text></svg>">
+<style>
+:root{
+  --felt:#14432e;
+  --felt-dark:#0e3322;
+  --felt-light:#1c5a3d;
+  --tile-bg:#f7ecd0;
+  --tile-edge:#d4b87a;
+  --tile-text:#2a1f10;
+  --accent:#c0392b;
+  --gold:#d4a843;
+  --text:#eaf2ec;
+  --text-dim:#9db8a8;
+  --card:rgba(255,255,255,.06);
+  --card-border:rgba(255,255,255,.12);
+  --good:#4caf7d;
+  --warn:#e8a33d;
+  --bad:#d9534f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--felt);color:var(--text);font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;line-height:1.5}
+body{background:radial-gradient(ellipse at top,#1c5a3d 0%,#14432e 50%,#0e3322 100%);min-height:100vh;padding:16px;padding-bottom:60px}
+.wrap{max-width:1100px;margin:0 auto}
+
+/* 顶栏 */
+.topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.topbar h1{font-size:20px;font-weight:700;letter-spacing:1px}
+.topbar h1 small{font-size:12px;color:var(--text-dim);font-weight:400;margin-left:8px}
+.rule-switches{display:flex;gap:12px;flex-wrap:wrap}
+.switch{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--card-border);padding:6px 12px;border-radius:8px;cursor:pointer;user-select:none;font-size:13px}
+.switch input{width:16px;height:16px;cursor:pointer;accent-color:var(--gold)}
+
+/* 卡片通用 */
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px;margin-bottom:14px;backdrop-filter:blur(4px)}
+.card-title{font-size:13px;color:var(--text-dim);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.card-title .hint{font-size:11px}
+
+/* 录入模式 tab */
+.mode-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.mode-tab{padding:6px 12px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid transparent;cursor:pointer;font-size:13px;color:var(--text-dim);transition:all .15s}
+.mode-tab.active{background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:600}
+
+/* 手牌展示区 */
+.hand-area{display:flex;flex-wrap:wrap;gap:6px;min-height:54px;align-items:center;padding:8px;background:rgba(0,0,0,.15);border-radius:8px}
+.hand-area.empty{justify-content:center;color:var(--text-dim);font-size:13px;font-style:italic}
+.hand-count{font-size:12px;color:var(--text-dim);margin-left:auto}
+
+/* 麻将牌 */
+.tile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:38px;height:52px;background:linear-gradient(180deg,#fbf3dd 0%,#f0e0b8 100%);border-radius:6px;box-shadow:0 2px 0 var(--tile-edge),0 3px 6px rgba(0,0,0,.3);cursor:pointer;user-select:none;position:relative;flex-shrink:0;transition:transform .1s}
+.tile:hover{transform:translateY(-2px)}
+.tile .num{font-size:18px;font-weight:700;line-height:1;color:var(--tile-text)}
+.tile .suit{font-size:10px;line-height:1;margin-top:2px;color:var(--tile-text)}
+.tile.m-wan .num{color:#c0392b}
+.tile.m-tong .num{color:#2471a3}
+.tile.m-tiao .num{color:#1e8449}
+.tile.m-wind{width:44px}
+.tile.m-wind .num{font-size:16px}
+.tile.small{width:30px;height:42px}
+.tile.small .num{font-size:14px}
+.tile.small .suit{font-size:9px}
+.tile.small.m-wind{width:36px}
+.tile.small.m-wind .num{font-size:12px}
+.tile.ghost{opacity:.35;cursor:not-allowed}
+.tile.ghost:hover{transform:none}
+
+/* 选牌面板 */
+.picker{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin-bottom:8px}
+.picker.wind{grid-template-columns:repeat(4,1fr);max-width:320px}
+.picker .tile{width:100%;height:52px}
+.picker .tile.sel{box-shadow:0 0 0 2px var(--gold),0 2px 0 var(--tile-edge);transform:translateY(-2px)}
+
+/* 三家弃牌/副露区 */
+.opp-row{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:700px){.opp-row{grid-template-columns:repeat(3,1fr)}}
+.opp-box{background:rgba(0,0,0,.15);border-radius:8px;padding:8px;min-height:60px}
+.opp-box .opp-label{font-size:12px;color:var(--text-dim);margin-bottom:6px}
+.opp-box .opp-tiles{display:flex;flex-wrap:wrap;gap:4px;min-height:36px;align-items:center}
+.opp-box .opp-tiles:empty::before{content:"暂无";color:var(--text-dim);font-size:12px;font-style:italic}
+
+/* 分析结果 */
+.result-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:700px){.result-grid{grid-template-columns:1fr 1fr}}
+.stat{background:rgba(0,0,0,.2);padding:10px 12px;border-radius:8px}
+.stat .label{font-size:12px;color:var(--text-dim)}
+.stat .value{font-size:22px;font-weight:700;margin-top:2px}
+.stat .value.ok{color:var(--good)}
+.stat .value.warn{color:var(--warn)}
+.stat .value.bad{color:var(--bad)}
+.stat .sub{font-size:11px;color:var(--text-dim);margin-top:2px}
+
+.status-line{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.badge{padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.badge.ok{background:rgba(76,175,125,.2);color:var(--good);border:1px solid rgba(76,175,125,.4)}
+.badge.warn{background:rgba(232,163,61,.2);color:var(--warn);border:1px solid rgba(232,163,61,.4)}
+.badge.bad{background:rgba(217,83,79,.2);color:var(--bad);border:1px solid rgba(217,83,79,.4)}
+
+/* 进张列表 */
+.advance-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.advance-item{background:rgba(212,168,67,.15);border:1px solid rgba(212,168,67,.3);border-radius:6px;padding:4px 8px;font-size:12px;display:flex;align-items:center;gap:4px}
+.advance-item .left{color:var(--gold);font-weight:600}
+
+/* 出牌推荐表 */
+.discard-table{width:100%;border-collapse:collapse;font-size:13px}
+.discard-table th,.discard-table td{padding:6px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08)}
+.discard-table th{color:var(--text-dim);font-weight:500;font-size:12px}
+.discard-table tr.best{background:rgba(212,168,67,.12)}
+.discard-table .tile-cell{display:flex;align-items:center;gap:4px}
+.rank{color:var(--text-dim);font-size:11px;width:20px;display:inline-block}
+
+/* 剩余牌统计 */
+.remaining-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;font-size:11px;text-align:center}
+.remaining-grid.wind{grid-template-columns:repeat(4,1fr)}
+.rem-cell{background:rgba(0,0,0,.2);padding:4px 2px;border-radius:4px}
+.rem-cell .rt{color:var(--text-dim);font-size:10px}
+.rem-cell .rv{font-weight:700;font-size:13px}
+.rem-cell.zero .rv{color:var(--text-dim);opacity:.4}
+
+/* 按钮 */
+.btn{padding:6px 14px;border-radius:6px;border:1px solid var(--card-border);background:rgba(255,255,255,.08);color:var(--text);cursor:pointer;font-size:13px;transition:all .15s}
+.btn:hover{background:rgba(255,255,255,.15)}
+.btn.gold{background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:600}
+.btn.danger:hover{background:rgba(217,83,79,.3);border-color:var(--bad)}
+
+.footer{text-align:center;color:var(--text-dim);font-size:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--card-border)}
+.footer .warn-text{color:var(--warn);font-weight:600}
+
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+@media(max-width:600px){
+  .picker{grid-template-columns:repeat(9,1fr);gap:4px}
+  .picker .tile{height:44px}
+  .tile{width:32px;height:44px}
+  .tile .num{font-size:15px}
+  .tile.m-wind{width:38px}
+  .topbar h1{font-size:17px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <h1>麻将牌理计算器<small>断门 · 报风听牌 自定义规则</small></h1>
+    <div class="rule-switches">
+      <label class="switch"><input type="checkbox" id="ruleDuanmen"> 断门（缺一门才能胡）</label>
+      <label class="switch"><input type="checkbox" id="ruleBaofeng"> 报风听牌（听牌须有风对/风刻）</label>
+    </div>
+  </div>
+
+  <!-- 录入模式 -->
+  <div class="card">
+    <div class="card-title">
+      <span>录入区选择（点牌加入对应区域）</span>
+      <span class="hint">点手牌上的牌可移除</span>
+    </div>
+    <div class="mode-tabs" id="modeTabs">
+      <div class="mode-tab active" data-mode="main">本家手牌</div>
+      <div class="mode-tab" data-mode="discard1">上家弃牌</div>
+      <div class="mode-tab" data-mode="discard2">对家弃牌</div>
+      <div class="mode-tab" data-mode="discard3">下家弃牌</div>
+      <div class="mode-tab" data-mode="open1">上家副露</div>
+      <div class="mode-tab" data-mode="open2">对家副露</div>
+      <div class="mode-tab" data-mode="open3">下家副露</div>
+    </div>
+  </div>
+
+  <!-- 本家手牌 -->
+  <div class="card">
+    <div class="card-title">
+      <span>本家手牌</span>
+      <span class="hand-count" id="handCount">0 张</span>
+    </div>
+    <div class="hand-area empty" id="mainHand">点击下方选牌加入手牌</div>
+  </div>
+
+  <!-- 选牌面板 -->
+  <div class="card">
+    <div class="card-title"><span>选牌面板</span><span class="hint">当前录入：<b id="currentModeLabel">本家手牌</b></span></div>
+    <div id="pickerPanel"></div>
+  </div>
+
+  <!-- 三家弃牌 & 副露 -->
+  <div class="card">
+    <div class="card-title"><span>三家弃牌与副露（已见牌会自动计入剩余统计）</span></div>
+    <div class="opp-row">
+      <div>
+        <div class="opp-box">
+          <div class="opp-label">上家 弃牌</div>
+          <div class="opp-tiles" id="discard1"></div>
+        </div>
+        <div class="opp-box" style="margin-top:8px">
+          <div class="opp-label">上家 副露（碰/杠）</div>
+          <div class="opp-tiles" id="open1"></div>
+        </div>
+      </div>
+      <div>
+        <div class="opp-box">
+          <div class="opp-label">对家 弃牌</div>
+          <div class="opp-tiles" id="discard2"></div>
+        </div>
+        <div class="opp-box" style="margin-top:8px">
+          <div class="opp-label">对家 副露</div>
+          <div class="opp-tiles" id="open2"></div>
+        </div>
+      </div>
+      <div>
+        <div class="opp-box">
+          <div class="opp-label">下家 弃牌</div>
+          <div class="opp-tiles" id="discard3"></div>
+        </div>
+        <div class="opp-box" style="margin-top:8px">
+          <div class="opp-label">下家 副露</div>
+          <div class="opp-tiles" id="open3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分析结果 -->
+  <div class="card">
+    <div class="card-title">
+      <span>牌理分析</span>
+      <span class="action-row" style="margin:0">
+        <button class="btn" id="undoBtn">撤销上一步</button>
+        <button class="btn danger" id="clearBtn">清空全部</button>
+      </span>
+    </div>
+    <div id="resultArea">
+      <div style="color:var(--text-dim);font-size:13px;padding:20px;text-align:center">输入手牌后自动计算</div>
+    </div>
+  </div>
+
+  <!-- 剩余牌统计 -->
+  <div class="card">
+    <div class="card-title"><span>牌山剩余张数统计</span></div>
+    <div id="remainingPanel"></div>
+  </div>
+
+  <div class="footer">
+    <div>仅供娱乐学习使用，<span class="warn-text">禁止赌博</span></div>
+    <div style="margin-top:4px">风牌=东南西北（无中发白）｜ 每张牌共4张 ｜ 本家13张未摸牌/14张已摸牌待打</div>
+  </div>
+</div>
+
+<script>
+// ============== 牌定义 ==============
+// 0-8: 1m-9m, 9-17: 1p-9p, 18-26: 1s-9s, 27-30: 东南西北
+const TILE_NAMES = [];
+for(let i=1;i<=9;i++) TILE_NAMES.push({id:i-1, name:i+'万', suit:'wan', num:i});
+for(let i=1;i<=9;i++) TILE_NAMES.push({id:i+8, name:i+'筒', suit:'tong', num:i});
+for(let i=1;i<=9;i++) TILE_NAMES.push({id:i+17, name:i+'条', suit:'tiao', num:i});
+const WIND_NAMES = [
+  {id:27, name:'东', suit:'wind', num:0},
+  {id:28, name:'南', suit:'wind', num:0},
+  {id:29, name:'西', suit:'wind', num:0},
+  {id:30, name:'北', suit:'wind', num:0},
+];
+const ALL_TILES = [...TILE_NAMES, ...WIND_NAMES];
+const SUIT_CLASS = {wan:'m-wan', tong:'m-tong', tiao:'m-tiao', wind:'m-wind'};
+
+// ============== 状态 ==============
+const state = {
+  main: [],          // 本家手牌，存tile id
+  discard1: [], discard2: [], discard3: [],
+  open1: [], open2: [], open3: [],
+  mode: 'main',
+  history: []        // 撤销栈
+};
+
+// ============== 工具函数 ==============
+function countTiles(arr){
+  const c = new Array(34).fill(0);
+  arr.forEach(id => c[id]++);
+  return c;
+}
+function getSuitColor(id){
+  if(id<9) return 'wan';
+  if(id<18) return 'tong';
+  if(id<27) return 'tiao';
+  return 'wind';
+}
+function tileLabel(id){
+  const t = ALL_TILES[id];
+  if(t.suit==='wind') return t.name;
+  return t.num + ({wan:'万',tong:'筒',tiao:'条'})[t.suit];
+}
+
+// ============== 向听数算法 ==============
+// 递归计算最大面子+搭子评分（2*面子 + 搭子）
+function analyzeHand(hand){
+  // hand: Array(34) 副本
+  let i = 0;
+  while(i<34 && hand[i]===0) i++;
+  if(i>=34) return 0;
+  let best = 0;
+
+  // 孤张：直接跳过这张
+  hand[i]--;
+  let s = analyzeHand(hand);
+  hand[i]++;
+  if(s>best) best=s;
+
+  // 刻子
+  if(hand[i]>=3){
+    hand[i]-=3;
+    s = 2 + analyzeHand(hand);
+    hand[i]+=3;
+    if(s>best) best=s;
+  }
+  // 对子（作为搭子）
+  if(hand[i]>=2){
+    hand[i]-=2;
+    s = 1 + analyzeHand(hand);
+    hand[i]+=2;
+    if(s>best) best=s;
+  }
+  // 顺子
+  if(i<27 && i%9<=6 && hand[i+1]>0 && hand[i+2]>0){
+    hand[i]--;hand[i+1]--;hand[i+2]--;
+    s = 2 + analyzeHand(hand);
+    hand[i]++;hand[i+1]++;hand[i+2]++;
+    if(s>best) best=s;
+  }
+  // 搭子 i,i+1
+  if(i<27 && i%9<=7 && hand[i+1]>0){
+    hand[i]--;hand[i+1]--;
+    s = 1 + analyzeHand(hand);
+    hand[i]++;hand[i+1]++;
+    if(s>best) best=s;
+  }
+  // 搭子 i,i+2
+  if(i<27 && i%9<=6 && hand[i+2]>0){
+    hand[i]--;hand[i+2]--;
+    s = 1 + analyzeHand(hand);
+    hand[i]++;hand[i+2]++;
+    if(s>best) best=s;
+  }
+  return best;
+}
+
+// 计算13张手牌的向听数
+function calcShanten(handArr){
+  const hand = countTiles(handArr);
+  let min = 8;
+  // 枚举将牌
+  for(let j=0;j<34;j++){
+    if(hand[j]>=2){
+      hand[j]-=2;
+      const score = analyzeHand(hand);
+      hand[j]+=2;
+      const s = 8 - 1 - score;
+      if(s<min) min=s;
+    }
+  }
+  // 无将
+  const score = analyzeHand(hand);
+  const s = 8 - score;
+  if(s<min) min=s;
+  return min;
+}
+
+// 检查断门：万/筒/条至少缺一门
+function checkDuanmen(handArr){
+  const c = countTiles(handArr);
+  const hasWan = c.slice(0,9).some(x=>x>0);
+  const hasTong = c.slice(9,18).some(x=>x>0);
+  const hasTiao = c.slice(18,27).some(x=>x>0);
+  const missing = [];
+  if(!hasWan) missing.push('万');
+  if(!hasTong) missing.push('筒');
+  if(!hasTiao) missing.push('条');
+  return { ok: missing.length>=1, missing };
+}
+
+// 检查报风：手牌中是否有风牌对子或风牌刻子
+function checkBaofeng(handArr){
+  const c = countTiles(handArr);
+  // 风牌 index 27-30
+  for(let i=27;i<=30;i++){
+    if(c[i]>=2){
+      return { ok:true, type: c[i]>=3?'风刻':'风对', tile: ALL_TILES[i].name };
+    }
+  }
+  return { ok:false, type:null, tile:null };
+}
+
+// 计算有效进张（13张手牌，摸一张后向听数-1）
+function getAdvanceTiles(handArr, rules){
+  const currentShanten = calcShanten(handArr);
+  const advances = {}; // tileId -> remaining count
+  // 遍历所有牌
+  for(let t=0;t<31;t++){
+    // 不能超过4张
+    const c = countTiles(handArr);
+    if(c[t]>=4) continue;
+    // 模拟摸这张
+    const newHand = [...handArr, t];
+    const newShanten = calcShanten(newHand);
+    if(newShanten < currentShanten){
+      // 检查规则约束：如果开启断门，新手牌必须断门
+      if(rules.duanmen){
+        const dm = checkDuanmen(newHand);
+        if(!dm.ok) continue;
+      }
+      if(rules.baofeng){
+        // 听牌时才需要检查报风。如果newShanten==0表示听牌，需要报风
+        if(newShanten===0){
+          const bf = checkBaofeng(newHand);
+          if(!bf.ok) continue;
+        }
+      }
+      advances[t] = true;
+    }
+  }
+  return Object.keys(advances).map(Number);
+}
+
+// ============== UI 渲染 ==============
+function tileHTML(id, small=false, clickable=false, onClick=null){
+  const t = ALL_TILES[id];
+  const cls = SUIT_CLASS[t.suit];
+  let inner;
+  if(t.suit==='wind'){
+    inner = `<div class="num">${t.name}</div>`;
+  } else {
+    inner = `<div class="num">${t.num}</div><div class="suit">${({wan:'万',tong:'筒',tiao:'条'})[t.suit]}</div>`;
+  }
+  return `<div class="tile ${cls} ${small?'small':''} ${clickable?'clickable':''}" data-tile="${id}" ${onClick?`onclick="${onClick}(${id})"`:''}>${inner}</div>`;
+}
+
+function renderPicker(){
+  const panel = document.getElementById('pickerPanel');
+  let html = '';
+  const suits = [[0,9,'万'],[9,18,'筒'],[18,27,'条']];
+  suits.forEach(([start,end])=>{
+    html += '<div class="picker">';
+    for(let i=start;i<end;i++){
+      const c = countCurrentVisibleTiles(i);
+      const ghost = c>=4 ? 'ghost' : '';
+      html += `<div class="tile ${SUIT_CLASS[getSuitColor(i)]} ${ghost}" data-tile="${i}"><div class="num">${i%9+1}</div><div class="suit">${({0:'万',9:'筒',18:'条'})[start]}</div></div>`;
+    }
+    html += '</div>';
+  });
+  html += '<div class="picker wind">';
+  for(let i=27;i<=30;i++){
+    const c = countCurrentVisibleTiles(i);
+    const ghost = c>=4 ? 'ghost' : '';
+    html += `<div class="tile m-wind ${ghost}" data-tile="${i}"><div class="num">${ALL_TILES[i].name}</div></div>`;
+  }
+  html += '</div>';
+  panel.innerHTML = html;
+  panel.querySelectorAll('.tile:not(.ghost)').forEach(el=>{
+    el.addEventListener('click', ()=> onPickerClick(parseInt(el.dataset.tile)));
+  });
+}
+
+function countCurrentVisibleTiles(id){
+  // 统计所有区域该牌总数，用于灰掉已达4张的
+  let c = 0;
+  c += state.main.filter(x=>x===id).length;
+  c += state.discard1.filter(x=>x===id).length;
+  c += state.discard2.filter(x=>x===id).length;
+  c += state.discard3.filter(x=>x===id).length;
+  c += state.open1.filter(x=>x===id).length;
+  c += state.open2.filter(x=>x===id).length;
+  c += state.open3.filter(x=>x===id).length;
+  return c;
+}
+
+function renderHand(){
+  const el = document.getElementById('mainHand');
+  document.getElementById('handCount').textContent = state.main.length + ' 张';
+  if(state.main.length===0){
+    el.className = 'hand-area empty';
+    el.textContent = '点击下方选牌加入手牌';
+    return;
+  }
+  el.className = 'hand-area';
+  el.innerHTML = state.main.map(id =>
+    `<div class="tile" data-tile="${id}" data-role="main">${tileInner(id)}</div>`
+  ).join('') + `<span class="hand-count">${state.main.length}张</span>`;
+  el.querySelectorAll('.tile').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      const id = parseInt(t.dataset.tile);
+      pushHistory();
+      const idx = state.main.indexOf(id);
+      if(idx>=0) state.main.splice(idx,1);
+      renderAll();
+    });
+  });
+}
+
+function tileInner(id){
+  const t = ALL_TILES[id];
+  if(t.suit==='wind') return `<div class="num">${t.name}</div>`;
+  return `<div class="num">${t.num}</div><div class="suit">${({wan:'万',tong:'筒',tiao:'条'})[t.suit]}</div>`;
+}
+
+function renderOpp(){
+  const boxes = ['discard1','discard2','discard3','open1','open2','open3'];
+  boxes.forEach(key=>{
+    const el = document.getElementById(key);
+    el.innerHTML = state[key].map(id =>
+      `<div class="tile small" data-tile="${id}" data-box="${key}">${tileInner(id)}</div>`
+    ).join('');
+    el.querySelectorAll('.tile').forEach(t=>{
+      t.addEventListener('click', ()=>{
+        const id = parseInt(t.dataset.tile);
+        pushHistory();
+        const arr = state[key];
+        const idx = arr.indexOf(id);
+        if(idx>=0) arr.splice(idx,1);
+        renderAll();
+      });
+    });
+  });
+}
+
+function renderModeTabs(){
+  document.querySelectorAll('.mode-tab').forEach(tab=>{
+    tab.classList.toggle('active', tab.dataset.mode===state.mode);
+  });
+  const labels = {main:'本家手牌',discard1:'上家弃牌',discard2:'对家弃牌',discard3:'下家弃牌',open1:'上家副露',open2:'对家副露',open3:'下家副露'};
+  document.getElementById('currentModeLabel').textContent = labels[state.mode];
+}
+
+function renderRemaining(){
+  // 统计所有已见牌
+  const seen = new Array(31).fill(0);
+  [...state.main,...state.discard1,...state.discard2,...state.discard3,
+   ...state.open1,...state.open2,...state.open3].forEach(id=>seen[id]++);
+  let html = '';
+  ['万','筒','条'].forEach((suit,si)=>{
+    html += `<div class="remaining-grid" style="margin-bottom:6px">`;
+    for(let i=0;i<9;i++){
+      const id = si*9+i;
+      const rem = 4 - seen[id];
+      html += `<div class="rem-cell ${rem===0?'zero':''}"><div class="rt">${i+1}${suit}</div><div class="rv">${rem}</div></div>`;
+    }
+    html += '</div>';
+  });
+  html += `<div class="remaining-grid wind">`;
+  for(let i=27;i<=30;i++){
+    const rem = 4 - seen[i];
+    html += `<div class="rem-cell ${rem===0?'zero':''}"><div class="rt">${ALL_TILES[i].name}</div><div class="rv">${rem}</div></div>`;
+  }
+  html += '</div>';
+  document.getElementById('remainingPanel').innerHTML = html;
+}
+
+function renderResult(){
+  const area = document.getElementById('resultArea');
+  const rules = {
+    duanmen: document.getElementById('ruleDuanmen').checked,
+    baofeng: document.getElementById('ruleBaofeng').checked
+  };
+
+  if(state.main.length===0){
+    area.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:20px;text-align:center">输入手牌后自动计算</div>';
+    return;
+  }
+
+  const main = state.main;
+  const is14 = main.length===14;
+  const analyzeHand = is14 ? main.slice(0,13) : main; // 14张时先按13张分析
+
+  let html = '';
+
+  // 状态徽章
+  const dm = checkDuanmen(main);
+  const bf = checkBaofeng(main);
+  let badges = '';
+  if(rules.duanmen){
+    badges += dm.ok
+      ? `<span class="badge ok">断门 ✓ 缺${dm.missing.join('/')}</span>`
+      : `<span class="badge bad">未断门（万筒条俱全）</span>`;
+  }
+  if(rules.baofeng){
+    badges += bf.ok
+      ? `<span class="badge ok">报风 ✓ ${bf.tile}${bf.type}</span>`
+      : `<span class="badge bad">无风水刻/风对</span>`;
+  }
+  html += `<div class="status-line">${badges}</div>`;
+
+  if(is14){
+    // 14张：枚举打出
+    const results = [];
+    const uniqueDiscards = [...new Set(main)];
+    uniqueDiscards.forEach(discardId=>{
+      const afterDiscard = [];
+      let skipped = false;
+      main.forEach(x=>{
+        if(x===discardId && !skipped){ skipped=true; return; }
+        afterDiscard.push(x);
+      });
+      const shanten = calcShanten(afterDiscard);
+      // 有效进张
+      let advTiles = [];
+      if(shanten>=0){
+        advTiles = getAdvanceTiles(afterDiscard, rules);
+      }
+      // 进张总剩余
+      const seen = new Array(31).fill(0);
+      [...afterDiscard,...state.discard1,...state.discard2,...state.discard3,
+       ...state.open1,...state.open2,...state.open3].forEach(id=>seen[id]++);
+      let advCount = 0;
+      advTiles.forEach(t=>{ advCount += (4 - seen[t]); });
+      results.push({discardId, shanten, advTiles, advCount});
+    });
+    // 排序：向听数升序，进张数降序
+    results.sort((a,b)=> a.shanten-b.shanten || b.advCount-a.advCount);
+
+    html += `<div class="result-grid" style="margin-bottom:12px">`;
+    html += `<div class="stat"><div class="label">已摸牌待打出</div><div class="value warn">${results[0].shanten}向听</div><div class="sub">最优打 ${tileLabel(results[0].discardId)}，进张${results[0].advCount}张</div></div>`;
+    html += `<div class="stat"><div class="label">出牌推荐（按牌效率排序）</div><div class="sub" style="font-size:12px;color:var(--text)">共${results.length}种选择</div></div>`;
+    html += `</div>`;
+
+    // 出牌表
+    html += `<table class="discard-table"><thead><tr><th>排名</th><th>打出</th><th>打后向听</th><th>有效进张</th><th>进张数</th></tr></thead><tbody>`;
+    results.forEach((r,idx)=>{
+      const advHtml = r.advTiles.map(t=>{
+        const seen = new Array(31).fill(0);
+        [...main,...state.discard1,...state.discard2,...state.discard3,
+         ...state.open1,...state.open2,...state.open3].forEach(id=>seen[id]++);
+        const rem = 4 - seen[t];
+        return `<span style="color:var(--gold)">${tileLabel(t)}<small style="color:var(--text-dim)">(${rem})</small></span>`;
+      }).join(' ') || '<span style="color:var(--text-dim)">无</span>';
+      html += `<tr class="${idx===0?'best':''}"><td><span class="rank">${idx+1}</span></td>
+        <td><div class="tile-cell">${tileHTML(r.discardId, true)}</div></td>
+        <td>${r.shanten}向听</td>
+        <td style="font-size:11px">${advHtml}</td>
+        <td><b>${r.advCount}</b></td></tr>`;
+    });
+    html += `</tbody></table>`;
+
+    // 规则提示
+    if(rules.duanmen && !dm.ok){
+      html += `<div style="margin-top:10px;padding:8px;background:rgba(217,83,79,.15);border-radius:6px;font-size:12px;color:var(--bad)">
+        注意：当前未断门，即使听牌也无法胡牌。需要打掉其中一门的牌。</div>`;
+    }
+    if(rules.baofeng && !bf.ok){
+      html += `<div style="margin-top:10px;padding:8px;background:rgba(217,83,79,.15);border-radius:6px;font-size:12px;color:var(--bad)">
+        注意：当前无风水刻/风对，即使听牌也无法胡牌。需要保留风牌凑成对或刻。</div>`;
+    }
+  } else {
+    // 13张：直接分析
+    const shanten = calcShanten(analyzeHand);
+    const advTiles = shanten>0 ? getAdvanceTiles(analyzeHand, rules) : [];
+    const seen = new Array(31).fill(0);
+    [...analyzeHand,...state.discard1,...state.discard2,...state.discard3,
+     ...state.open1,...state.open2,...state.open3].forEach(id=>seen[id]++);
+    let advCount = 0;
+    const advHtml = advTiles.map(t=>{
+      const rem = 4 - seen[t];
+      advCount += rem;
+      return `<div class="advance-item"><span class="left">${tileLabel(t)}</span><span>剩${rem}</span></div>`;
+    }).join('');
+
+    html += `<div class="result-grid">`;
+    let shantenCls = shanten===0 ? 'ok' : shanten<=2 ? 'warn' : 'bad';
+    let shantenText = shanten===0 ? '已听牌' : shanten+'向听';
+    html += `<div class="stat"><div class="label">向听数</div><div class="value ${shantenCls}">${shantenText}</div>`;
+    if(shanten===0 && (rules.duanmen||rules.baofeng)){
+      let canWin = true;
+      if(rules.duanmen && !dm.ok) canWin=false;
+      if(rules.baofeng && !bf.ok) canWin=false;
+      html += `<div class="sub">${canWin?'满足规则，可胡':'已听牌但未满足规则前置，暂不能胡'}</div>`;
+    }
+    html += `</div>`;
+    html += `<div class="stat"><div class="label">有效进张（${advCount}张）</div><div class="advance-list">${advHtml||'<span style="color:var(--text-dim);font-size:12px">无</span>'}</div></div>`;
+    html += `</div>`;
+  }
+
+  area.innerHTML = html;
+}
+
+// ============== 交互 ==============
+function pushHistory(){
+  state.history.push(JSON.stringify({
+    main:[...state.main],
+    discard1:[...state.discard1],discard2:[...state.discard2],discard3:[...state.discard3],
+    open1:[...state.open1],open2:[...state.open2],open3:[...state.open3]
+  }));
+  if(state.history.length>50) state.history.shift();
+}
+
+function onPickerClick(id){
+  // 全局4张限制检查
+  const total = countCurrentVisibleTiles(id);
+  if(total >= 4) return;
+  pushHistory();
+  const arr = state[state.mode];
+  arr.push(id);
+  renderAll();
+}
+
+function renderAll(){
+  renderModeTabs();
+  renderHand();
+  renderOpp();
+  renderRemaining();
+  renderResult();
+}
+
+// 绑定事件
+document.querySelectorAll('.mode-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    state.mode = tab.dataset.mode;
+    renderModeTabs();
+  });
+});
+document.getElementById('undoBtn').addEventListener('click', ()=>{
+  if(state.history.length===0) return;
+  const prev = JSON.parse(state.history.pop());
+  state.main = prev.main;
+  state.discard1 = prev.discard1; state.discard2 = prev.discard2; state.discard3 = prev.discard3;
+  state.open1 = prev.open1; state.open2 = prev.open2; state.open3 = prev.open3;
+  renderAll();
+});
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if(!confirm('确定清空所有手牌和录入？')) return;
+  pushHistory();
+  state.main = [];
+  state.discard1=[];state.discard2=[];state.discard3=[];
+  state.open1=[];state.open2=[];state.open3=[];
+  renderAll();
+});
+document.getElementById('ruleDuanmen').addEventListener('change', ()=>{
+  localStorage.setItem('mj_duanmen', document.getElementById('ruleDuanmen').checked);
+  renderResult();
+});
+document.getElementById('ruleBaofeng').addEventListener('change', ()=>{
+  localStorage.setItem('mj_baofeng', document.getElementById('ruleBaofeng').checked);
+  renderResult();
+});
+
+// 初始化
+document.getElementById('ruleDuanmen').checked = localStorage.getItem('mj_duanmen')==='true';
+document.getElementById('ruleBaofeng').checked = localStorage.getItem('mj_baofeng')==='true';
+renderPicker();
+renderAll();
+</script>
+</body>
+</html>
